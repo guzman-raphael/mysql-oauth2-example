@@ -1,0 +1,64 @@
+version: "2.4"
+services:
+  oidc:
+    extends:
+      file: ../node-oidc-provider/docker-compose.yml
+      service: oauth2_demo
+    networks:
+    - main
+    ports:
+      - "3000:3000"
+  # auth_plugin:
+  #   build:
+  #     context: auth_plugin
+  #   image: auth_plugin_builder:v0.0.0
+  #   networks:
+  #   - main
+  #   volumes:
+  #   - data:/data
+  #   working_dir: /src
+  #   # entrypoint: tail
+  #   # command: -f /dev/null
+  db:
+    build:
+      context: .
+      dockerfile: db/Dockerfile
+    image: db_test:v0.0.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=simple
+      # - LD_PRELOAD=/lib/x86_64-linux-gnu/libpam.so.0
+    networks:
+    - main
+  # db2:
+  #   image: mariadb:10.4
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=taste
+  #   networks:
+  #   - main
+  dj:
+    build:
+      context: ./dj
+    image: jup_test:v0.0.0
+    environment:
+      - DISPLAY                             # Necessary to allow GUI to route to Docker host
+      - PYTHON_USER=dja                     # Underprivileged username
+      - JUPYTER_PASSWORD=datajoint          # Jupyter Notebook login password
+    ports:
+      - 8888:8888
+    # command: /launch.sh
+    user: 1000:anaconda                   # Necessary to allow GUI to route to Docker host
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw    # Necessary to allow GUI to route to Docker host
+      - ../datajoint-python/notebook:/home/dja/notebooks
+      # - ./dj/conda_requirements.txt:/conda_requirements.txt
+      # - ./dj/pip_requirements.txt:/pip_requirements.txt
+      - ./dj/jupyter_notebook_config.py:/etc/jupyter/jupyter_notebook_config.py
+      # - ./apk_requirements.txt:/apk_requirements.txt
+    networks:
+    - main
+#     volumes:
+#     - data/pam_oauth2.so:/lib/x86_64-linux-gnu/security/pam_oauth2.so
+# volumes:
+#   data:
+networks:
+  main:
